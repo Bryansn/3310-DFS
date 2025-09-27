@@ -1,27 +1,28 @@
-/**************************************************************/
-/* Bryan Sanchez                                              */
-/* Login ID: bryans1                                          */
-/* CS 3310, Fall 2025                                         */
-/* Programming Assignment 1                                   */
-/* Prog1: Outputs connected components of undirected graphs   */
-/**************************************************************/
 
-import java.io.*;             // For reading files
-import java.util.*;           // For lists, sets, maps, scanners, etc.
+/***************************************************************/
+/* Bryan Sanchez                                               */
+/* Login ID: bryans1                                           */
+/* CS 3310, Fall 2025                                          */
+/* Programming Assignment 1                                    */
+/* Prog1: connect components of undirected graphs              */
+/***************************************************************/
+import java.io.*;       //reads file
+import java.util.*;     //list, sets, maps, and scanners
 
 public class Prog1 {
 
     /**************************************************************/
-    /* Method: main                                               */
+    /* Method: Main                                               */
     /* Purpose: Reads input file and processes each graph line    */
     /* Parameters:                                                */
-    /*   String[] args - command-line arguments                   */
+    /* String[] args (file)                                       */
     /* Returns: none                                              */
     /**************************************************************/
 
     public static void main(String[] args) {
-    //Check if file name is provided in command line
+        //makes sure you provide a file
         if (args.length != 1) {
+            //error output if file was not read
             System.out.println("Usage: java Prog1 <input_file>");
             return;
         }
@@ -29,38 +30,38 @@ public class Prog1 {
         String filename = args[0];
 
         try {
-        //open file and prepare to read line by line
+            //gets the file I want to read 
             File inputFile = new File(filename);
+            //use scanner to read file line by line
             Scanner scanner = new Scanner(inputFile);
 
             //keep track of how many graphs are processed
             int graphCount = 1;
 
-            //read each line of the file and if empty skip it
+            //while there is another line in the file keep going
             while (scanner.hasNextLine()) {
+                //read the line and remove extra spaces
                 String line = scanner.nextLine().trim();
-                if (line.isEmpty()) continue;
-
-                //print a lable for current graph
-                System.out.println("Graph" + graphCount + ":");
-
-                //return the list of connected components
-                List<List<Integer>> components = processGraphLine(line);
-
-                //print out message for how many commponets the graph has
-                if (components.size() == 1) {
-                    System.out.print("One connected component: ");
-                } else {
-                    System.out.print(components.size() + " connected components: ");
+                if (line.isEmpty()) {
+                    continue;
                 }
 
-                //loops through each connected componet and proints the verticies
+                //example "Graph 1: "
+                System.out.println("Graph" + graphCount + ":");
+
+                //use processGrapghLine and store answer in components
+                List<List<Integer>> components = processGraphLine(line);
+
+                System.out.print(components.size() + " connected components: ");
+
+                //loop through each connected component
                 for (List<Integer> component : components) {
+                    //example {1,2,4}
                     System.out.print("{");
-                    for (int v : component) {
-                        System.out.print(v + " ");
+                    for (int i : component) {
+                        System.out.print(i + " ");
                     }
-                    System.out.print("} ");
+                    System.out.print("}");
                 }
                 //increment graph count and go to next line
                 System.out.println("\n");
@@ -79,44 +80,57 @@ public class Prog1 {
     /* Method: processGraphLine                                   */
     /* Purpose: Parses a line of input and finds connected comps  */
     /* Parameters:                                                */
-    /*   String line - a line like "5 (1,2) (3,4) (3,5)"           */
+    /* String line - a line like "5 (1,2) (3,4) (3,5)"            */
     /* Returns:                                                   */
-    /*   List of components (each as a list of vertices)          */
+    /* List of components                                         */
     /**************************************************************/
     public static List<List<Integer>> processGraphLine(String line) {
-        //first value is the number of vertices
+        //seperate line into sections
         String[] tokens = line.split(" ");
+        //first number is num of vertices
         int numVertices = Integer.parseInt(tokens[0]);
 
-        //initialize the list each node maps to an empty list
+        //create map where each vertex points to a list of the 
+        //vertices it connects to
         Map<Integer, List<Integer>> graph = new HashMap<>();
 
+        //loop numVertices times
         for (int i = 1; i <= numVertices; i++) {
+            //insert values into map
             graph.put(i, new ArrayList<>());
         }
-
-        //parse each edge like (1,2) 
-        //removes the parentheses 
-        //splits by camma
-        //adds both directions since undirected 
+        
+        //skip first num, start at one and loop
         for (int i = 1; i < tokens.length; i++) {
+            //remove parentheses
             String edge = tokens[i].replaceAll("[()]", "");
+            //split by comma ,
             String[] parts = edge.split(",");
-            int u = Integer.parseInt(parts[0]);
-            int v = Integer.parseInt(parts[1]);
+            //spit the 2 vertex and assign to vertex A, B
+            int vertexA = Integer.parseInt(parts[0]);
+            int vertexB = Integer.parseInt(parts[1]);
 
-            graph.get(u).add(v);
-            graph.get(v).add(u);
+            //add each vertex to each others list
+            graph.get(vertexA).add(vertexB);
+            graph.get(vertexB).add(vertexA);
         }
 
+        //make empty collection to store duplicates
         Set<Integer> visited = new HashSet<>();
+        //list of connected componets 
         List<List<Integer>> components = new ArrayList<>();
 
+        //loop through each vertex
         for (int i = 1; i <= numVertices; i++) {
+            //check if you visited it 
             if (!visited.contains(i)) {
+                //empty list for all connected vertices
                 List<Integer> component = new ArrayList<>();
+                //call dfs 
                 dfs(i, graph, visited, component);
+                //sort componets
                 Collections.sort(component);
+                //add list into main component
                 components.add(component);
             }
         }
@@ -128,18 +142,22 @@ public class Prog1 {
     /* Method: dfs                                                */
     /* Purpose: DFS traversal to find all nodes in a component    */
     /* Parameters:                                                */
-    /*   int node - current node                                  */
-    /*   graph - adjacency list                                   */
-    /*   visited - set of visited nodes                           */
-    /*   component - list storing current connected component     */
+    /* int node - current node                                    */
+    /* graph - adjacency list                                     */
+    /* visited - set of visited nodes                             */
+    /* component - list storing current connected component       */
     /**************************************************************/
     public static void dfs(int node, Map<Integer, List<Integer>> graph,
-                           Set<Integer> visited, List<Integer> component) {
+            Set<Integer> visited, List<Integer> component) {
+        //add node to visited
         visited.add(node);
+        //add node to component
         component.add(node);
-
+        //add each element to neighbor 
         for (int neighbor : graph.get(node)) {
+            //if you have not visited the vertex
             if (!visited.contains(neighbor)) {
+                //continue dfs and explore all connections
                 dfs(neighbor, graph, visited, component);
             }
         }
